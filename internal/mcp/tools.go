@@ -36,5 +36,13 @@ func registerTools(s *server.MCPServer) error {
 	)
 	s.AddTool(multiGetTool, multiGetHandler)
 
+	// vector_search tool
+	vectorSearchTool := mcp.NewTool("vector_search",
+		mcp.WithDescription("Semantic search using vector embeddings (requires Ollama)"),
+		mcp.WithString("query", mcp.Required(), mcp.Description("Search query")),
+		mcp.WithNumber("limit", mcp.Description("Max results (default 10)")),
+	)
+	s.AddTool(vectorSearchTool, vectorSearchHandler)
+
 	return nil
 }

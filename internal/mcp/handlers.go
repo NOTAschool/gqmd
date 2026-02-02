@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/NOTAschool/gqmd/internal/embed"
 	"github.com/NOTAschool/gqmd/internal/store"
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -118,6 +119,45 @@ func multiGetHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToo
 	for _, r := range results {
 		text += fmt.Sprintf("## %s\n\nPath: %s/%s\n\n%s\n\n---\n\n",
 			r.Document.Title, r.Document.Collection, r.Document.Path, r.Content)
+	}
+
+	return mcp.NewToolResultText(text), nil
+}
+
+func vectorSearchHandler(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	query := req.GetString("query", "")
+	if query == "" {
+		return mcp.NewToolResultError("query is required"), nil
+	}
+
+	limit := req.GetInt("limit", 10)
+
+	// Get embedding from Ollama
+	embedClient := embed.NewClient("", "")
+	queryVec, err := embedClient.Embed(query)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("embedding failed: %v", err)), nil
+	}
+
+	db, err := store.Open()
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to open database: %v", err)), nil
+	}
+	defer db.Close()
+
+	results, err := db.VectorSearch(store.Vector(queryVec), limit)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("vector search failed: %v", err)), nil
+	}
+
+	if len(results) == 0 {
+		return mcp.NewToolResultText("No results found"), nil
+	}
+
+	var text string
+	for i, r := range results {
+		text += fmt.Sprintf("%d. %s/%s (%.3f)\n   %s\n\n",
+			i+1, r.Collection, r.Path, r.Score, r.Title)
 	}
 
 	return mcp.NewToolResultText(text), nil

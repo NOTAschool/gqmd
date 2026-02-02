@@ -144,6 +144,21 @@ func (s *Store) init() error {
 		return err
 	}
 
+	// Vector embeddings table
+	_, err = s.db.Exec(`
+	CREATE TABLE IF NOT EXISTS embeddings (
+		hash TEXT NOT NULL,
+		chunk_idx INTEGER NOT NULL DEFAULT 0,
+		model TEXT NOT NULL,
+		dimensions INTEGER NOT NULL,
+		vector BLOB NOT NULL,
+		created_at TEXT NOT NULL,
+		PRIMARY KEY (hash, chunk_idx)
+	)`)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
