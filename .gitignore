@@ -8,6 +8,9 @@
 *.so
 *.dylib
 
+# Go binary (no extension)
+gqmd
+
 # Test binary, built with `go test -c`
 *.test
 
