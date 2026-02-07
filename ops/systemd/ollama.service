@@ -1,0 +1,19 @@
+# Ollama 服务由安装脚本自动创建于 /etc/systemd/system/ollama.service
+# 此文件仅作参考，无需手动部署
+#
+# 安装命令: curl -fsSL https://ollama.ai/install.sh | sh
+# 服务会自动创建并启用
+
+[Unit]
+Description=Ollama Service
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/ollama serve
+User=ollama
+Group=ollama
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

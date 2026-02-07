@@ -135,6 +135,76 @@ ollama serve
 # Then use vector_search tool via MCP
 ```
 
+## Linux Systemd Deployment
+
+For Linux users who want gQMD to run as a system service with automatic document scanning.
+
+### Prerequisites
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull embedding model
+ollama pull nomic-embed-text
+
+# Build and install gqmd
+go build -o gqmd ./cmd/gqmd
+sudo cp gqmd /usr/local/bin/
+```
+
+### Deploy Services
+
+```bash
+# Copy service files
+sudo cp ops/systemd/gqmd-scan.service /etc/systemd/system/
+sudo cp ops/systemd/gqmd-scan.timer /etc/systemd/system/
+
+# Edit service file to match your environment
+sudo nano /etc/systemd/system/gqmd-scan.service
+# Update: User, Group, WorkingDirectory as needed
+
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable and start Ollama (if not already running)
+sudo systemctl enable ollama.service
+sudo systemctl start ollama.service
+
+# Enable and start gqmd timer
+sudo systemctl enable gqmd-scan.timer
+sudo systemctl start gqmd-scan.timer
+```
+
+### Verify Deployment
+
+```bash
+# Check Ollama status
+sudo systemctl status ollama
+curl http://127.0.0.1:11434/api/tags
+
+# Check timer status
+systemctl list-timers | grep gqmd
+
+# Manual scan trigger
+sudo systemctl start gqmd-scan.service
+
+# View scan logs
+journalctl -u gqmd-scan -f
+```
+
+### Service Configuration
+
+The timer runs document scanning:
+- **Daily at 03:00** - Full index update
+- **5 minutes after boot** - Initial scan
+
+Environment variables in `gqmd-scan.service`:
+- `OLLAMA_HOST` - Ollama API endpoint (default: `http://127.0.0.1:11434`)
+- `GQMD_EMBEDDING_MODEL` - Embedding model (default: `nomic-embed-text`)
+
+See [ops/systemd/README.md](ops/systemd/README.md) for detailed configuration.
+
 ## Building
 
 ### Requirements
